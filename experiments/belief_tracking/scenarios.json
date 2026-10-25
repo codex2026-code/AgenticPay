@@ -1,0 +1,5 @@
+[
+  {"id": "wide_overlap", "buyer_max": 92.0, "seller_min": 48.0, "list_price": 120.0},
+  {"id": "narrow_overlap", "buyer_max": 76.0, "seller_min": 70.0, "list_price": 120.0},
+  {"id": "no_overlap", "buyer_max": 61.0, "seller_min": 68.0, "list_price": 120.0}
+]

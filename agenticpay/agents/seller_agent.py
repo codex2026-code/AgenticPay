@@ -6,6 +6,7 @@ from agenticpay.agents.base_agent import BaseAgent
 from agenticpay.models.base_llm import BaseLLM
 from agenticpay.models.base_vlm import BaseVLM
 from loguru import logger
+from agenticpay.memory.belief_tracking import BeliefTracker
 
 
 class SellerAgent(BaseAgent):
@@ -21,6 +22,7 @@ class SellerAgent(BaseAgent):
         role_description: str = "You are a seller trying to maximize profit while being reasonable. You are professional, friendly, and want to close a deal that benefits both parties.",
         seller_min_price: Optional[float] = None,
         system_prompt_suffix: Optional[str] = None,
+        belief_tracker: Optional[BeliefTracker] = None,
     ):
         """Initialize Seller Agent
         
@@ -30,10 +32,17 @@ class SellerAgent(BaseAgent):
             role_description: Role description
             seller_min_price: Minimum acceptable selling price for seller (bottom price, confidential information)
             system_prompt_suffix: Additional text to append to system prompt (e.g., personality profile)
+            belief_tracker: Optional private structured belief instrumentation.
         """
         super().__init__(model, role_description, name)
         self.seller_min_price = seller_min_price
         self.system_prompt_suffix = system_prompt_suffix
+        self.belief_tracker = belief_tracker
+
+    def initialize(self, context: Dict[str, Any]):
+        super().initialize(context)
+        if self.belief_tracker is not None:
+            self.belief_tracker.reset()
     
     def respond(
         self,
@@ -137,6 +146,10 @@ You MUST format your entire output as follows (do NOT skip either block):
 """
 
         full_prompt = prompt + seller_guidance
+        if self.belief_tracker is not None:
+            full_prompt = self.belief_tracker.prepare_prompt(
+                full_prompt, current_state.get("current_round", 0)
+            )
 
         # logger.info(f"Seller prompt: {full_prompt}")
 
@@ -165,6 +178,9 @@ You MUST format your entire output as follows (do NOT skip either block):
                 max_tokens=2048  # Ensure complete response generation
             )
         
+        if self.belief_tracker is not None:
+            return self.belief_tracker.consume(response)
+
         # Remove <think>...</think> tags (used by reasoning models like DeepSeek)
         response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL | re.IGNORECASE)
 

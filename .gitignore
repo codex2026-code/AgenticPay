@@ -60,3 +60,7 @@ agenticpay/examples/config.py
 agenticpay/results/
 
 agenticpay/data/
+
+# Evaluator-only belief traces include both sides' private prompts and oracle labels.
+experiments/belief_tracking/runs/
+.venv-belief/
